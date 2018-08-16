@@ -1,0 +1,6 @@
+valid epimorphisms
+
+P,P2 -> T
+P3,P5 -> T2
+
+P4 (4-clique) to neither T and T2
