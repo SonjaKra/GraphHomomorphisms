@@ -19,12 +19,13 @@ def graph_epimorphism(pattern_am,target_am):
 #            if pattern_am[i][j]==1
     t_edge_domains = create_t_edge_domains(pattern_am,target_am)
     p_vertex_domains = create_p_vertex_domains(pattern_am,target_am)
-    
-    return graph_epimorphism_exists(p_vertex_domains,t_edge_domains,pattern_am,target_am)
+    p_dist_matrix = distance_matrix(pattern_am)
+    t_dist_matrix = distance_matrix(target_am)
+    return graph_epimorphism_exists(p_vertex_domains,t_edge_domains,pattern_am,target_am,p_dist_matrix,t_dist_matrix)
 #________________________________________________________________
 # MAIN RECURSIVE BACKTRACKING ALGORITHM
 
-def graph_epimorphism_exists(p_vertex_domains,t_edge_domains,pattern_am,target_am):
+def graph_epimorphism_exists(p_vertex_domains,t_edge_domains,pattern_am,target_am,p_dist_matrix,t_dist_matrix):
     # all edges in the target graph have been mapped to, i.e. surjectivity has been satisfied
     if not t_edge_domains:
         # all vertices in the pattern graph have all been mapped to target vertices satisfying the adjacency constraint
@@ -38,11 +39,12 @@ def graph_epimorphism_exists(p_vertex_domains,t_edge_domains,pattern_am,target_a
         variable = variable_value_pair[0] # vertex to map
         domain = variable_value_pair[1] # possible values
         for poss_vertex in domain:
+ #           print "assigning "+ str(variable) +" to "+str(poss_vertex)
             # propagation: adapt domains
-            p_vertex_domains_copy = propagate_adjacency_after_vertex_assignement(p_vertex_domains,variable,poss_vertex,pattern_am,target_am)
+            p_vertex_domains_copy = propagate_adjacency_after_vertex_assignement(p_vertex_domains,variable,poss_vertex,pattern_am,target_am,p_dist_matrix,t_dist_matrix)
             # check for dead end
             if [] not in p_vertex_domains_copy.values():
-                solution = graph_epimorphism_exists(p_vertex_domains_copy,t_edge_domains,pattern_am,target_am)
+                solution = graph_epimorphism_exists(p_vertex_domains_copy,t_edge_domains,pattern_am,target_am,p_dist_matrix,t_dist_matrix)
                 if solution:
                     return True
         return False
@@ -54,16 +56,19 @@ def graph_epimorphism_exists(p_vertex_domains,t_edge_domains,pattern_am,target_a
     edge_to_map = variable_value_pair[0]
     domain = variable_value_pair[1] # possible edges to map to
     for poss_edge in domain:
+#        print "assigning" + str(edge_to_map) +" to " + str(poss_edge)
         # map edge_to_map -> possedge (in the order vertices are listed)
         # propagation: adapt domains
+#        t_edge_domains_copy=propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,p_dist_matrix,t_dist_matrix)
         t_edge_domains_copy=propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,pattern_am)
         if [] in [variable_value_pair[1] for variable_value_pair in t_edge_domains_copy]:
             continue
-        p_vertex_domains_copy = propagate_adjacency_after_edge_assignement(p_vertex_domains,poss_edge,edge_to_map,pattern_am,target_am)
+        p_vertex_domains_copy = propagate_adjacency_after_edge_assignement(p_vertex_domains,poss_edge,edge_to_map,pattern_am,target_am,p_dist_matrix,t_dist_matrix)
         if [] not in p_vertex_domains_copy.values():
-            solution = graph_epimorphism_exists(p_vertex_domains_copy,t_edge_domains_copy,pattern_am,target_am)
+            solution = graph_epimorphism_exists(p_vertex_domains_copy,t_edge_domains_copy,pattern_am,target_am,p_dist_matrix,t_dist_matrix)
             if solution:
                 return True
+#        print "continue looping"
     return False
 #___________________________________________________________
 # HELPER FUNCTIONS
@@ -138,6 +143,7 @@ def get_next_colour(colour):
 def distance_matrix(am):
     dist = [[float("Inf") for i in xrange(len(am))] for j in xrange(len(am))]
     for i in xrange(len(am)):
+        dist[i][i]=0
         for j in xrange(i+1,len(am)):
             if am[i][j]==1:
                 dist[i][j]=1
@@ -149,6 +155,7 @@ def distance_matrix(am):
                 if dist[i][j] > dist[i][k]+dist[k][j]:
                     dist[i][j] = dist[i][k] +  dist[k][j]
                     dist[j][i] = dist[i][k] + dist[k][j]
+    #print dist
     return dist
                 
 #block end           
@@ -156,7 +163,8 @@ def distance_matrix(am):
 # PROPAGATION FUNCTIONS
 
 # currently assuming looplessness
-def propagate_adjacency_after_vertex_assignement(p_vertex_domains,mapped_vertex,mapped_to_vertex,pattern_am,target_am):
+def propagate_adjacency_after_vertex_assignement(p_vertex_domains,mapped_vertex,mapped_to_vertex,pattern_am,target_am,p_dist_matrix,t_dist_matrix):
+ #   print "start2"
     p_vertex_domains_copy = {}
     for p_vertex in p_vertex_domains.keys():
         if p_vertex!=mapped_vertex:
@@ -164,11 +172,18 @@ def propagate_adjacency_after_vertex_assignement(p_vertex_domains,mapped_vertex,
             for t_vertex in p_vertex_domains[p_vertex]:
                 # should take care of loops?
                 if pattern_am[mapped_vertex][p_vertex]==0 or target_am[mapped_to_vertex][t_vertex]==1:
-                    domain_copy.append(t_vertex)
+#                    print "distance from" + str(mapped_vertex) + " to "+str(p_vertex) +" in pattern graph: "+str(p_dist_matrix[mapped_vertex][p_vertex])
+ #                   print "distance from" + str(mapped_to_vertex) + " to "+str(t_vertex) +" in target graph: "+str(t_dist_matrix[mapped_to_vertex][t_vertex])
+                    if p_dist_matrix[mapped_vertex][p_vertex] >= t_dist_matrix[mapped_to_vertex][t_vertex]:
+                        domain_copy.append(t_vertex)
+#                    else:
+ #                       print str(p_vertex) + " cannot be mapped to " + str(t_vertex)
             p_vertex_domains_copy[p_vertex]=domain_copy
+ #   print "done2"
     return p_vertex_domains_copy
     
-def propagate_adjacency_after_edge_assignement(p_vertex_domains,p_edge,t_edge,pattern_am,target_am):
+def propagate_adjacency_after_edge_assignement(p_vertex_domains,p_edge,t_edge,pattern_am,target_am,p_dist_matrix,t_dist_matrix):
+ #   print "start"
     p_vertex_domains_copy = {}
     for p_vertex in p_vertex_domains.keys():
         if not (p_vertex==p_edge[0] or p_vertex==p_edge[1]):
@@ -179,9 +194,28 @@ def propagate_adjacency_after_edge_assignement(p_vertex_domains,p_edge,t_edge,pa
                 # u -> a, v -> b
                 # should take care of loops?
                 if (pattern_am[p_vertex][p_edge[0]]==0 or target_am[t_vertex][t_edge[0]]==1) and (pattern_am[p_vertex][p_edge[1]]==0 or target_am[t_vertex][t_edge[1]]==1):
-                    domain_copy.append(t_vertex)
+                    if (p_dist_matrix[p_vertex][p_edge[0]]>=t_dist_matrix[t_vertex][t_edge[0]]) and (p_dist_matrix[p_vertex][p_edge[1]]>=t_dist_matrix[t_vertex][t_edge[1]]):
+                        domain_copy.append(t_vertex)
+#                    else:
+ #                       print str(p_vertex) + " cannot be mapped to " + str(t_vertex)
             p_vertex_domains_copy[p_vertex] = domain_copy
+ #   print "done"
     return p_vertex_domains_copy
+
+#def propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,p_dist_matrix,t_dist_matrix):
+#    t_edge_domains_copy = []
+ #   for variable in t_edge_domains:
+#        t_edge = variable[0]
+#        if t_edge!=edge_to_map:
+#            domain_copy = []
+#            for p_edge in variable[1]:
+#                if p_dist_matrix[poss_edge[0]][p_edge[0]]>=t_dist_matrix[edge_to_map[0]][t_edge[0]] and not(p_dist_matrix[poss_edge[0]][p_edge[0]]==1 and t_dist_matrix[edge_to_map[0]][t_edge[0]]==0):
+#                    if p_dist_matrix[poss_edge[1]][p_edge[1]]>=t_dist_matrix[edge_to_map[1]][t_edge[1]] and not(p_dist_matrix[poss_edge[1]][p_edge[1]]==1 and t_dist_matrix[edge_to_map[1]][t_edge[1]]==0):
+#                        if p_dist_matrix[poss_edge[0]][p_edge[1]]>=t_dist_matrix[edge_to_map[0]][t_edge[1]] and not(p_dist_matrix[poss_edge[0]][p_edge[1]]==1 and t_dist_matrix[edge_to_map[0]][t_edge[1]]==0):
+#                            if p_dist_matrix[poss_edge[1]][p_edge[0]]>=t_dist_matrix[edge_to_map[1]][t_edge[0]] and not(p_dist_matrix[poss_edge[1]][p_edge[0]]==1 and t_dist_matrix[edge_to_map[1]][t_edge[0]]==0):
+#                                domain_copy.append(p_edge)
+#            t_edge_domains_copy.append((t_edge,domain_copy))
+#    return t_edge_domains_copy
 
 # loops not considered here       
 def propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,pattern_am):
@@ -228,6 +262,52 @@ def propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,pos
                 t_edge_domains_copy.append((t_edge,domain_copy))
     return t_edge_domains_copy
 
+# loops not considered here       
+#def propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,pattern_am):
+#    t_edge_domains_copy = []
+#    for variable in t_edge_domains:
+#        t_edge = variable[0]
+#        if t_edge!=edge_to_map:
+#            if len(set(edge_to_map).union(set(t_edge)))==4:
+#                domain_copy = []
+#                for p_edge in variable[1]:
+#                    if len(set(poss_edge).union(set(p_edge)))==4:
+#                        domain_copy.append(p_edge)
+#                t_edge_domains_copy.append((t_edge,domain_copy))
+                # edge_to_map:[u,v], t_edge :[w,z]
+                #case u==w
+#            elif edge_to_map[0]==t_edge[0]:
+#                domain_copy = []
+#                for p_edge in variable[1]:
+#                    if p_edge[0]!=poss_edge[1] and p_edge[1]!=poss_edge[0] and p_edge[1]!=poss_edge[1]:
+#                        # IMPORTANT: no loops considered currently
+#                        # HERE LIES THE BUUG
+#                        if p_edge[0]==poss_edge[0] or pattern_am[p_edge[0]][poss_edge[0]]==0:
+#                            domain_copy.append(p_edge)
+#                t_edge_domains_copy.append((t_edge,domain_copy))
+#            elif edge_to_map[0]==t_edge[1]:
+#                domain_copy = []
+#                for p_edge in variable[1]:
+#                    if p_edge[1]!=poss_edge[1] and p_edge[0]!=poss_edge[1] and p_edge[0]!=poss_edge[0]:
+#                        if poss_edge[0]==p_edge[1] or pattern_am[poss_edge[0]][p_edge[1]]==0:
+#                            domain_copy.append(p_edge)
+#                t_edge_domains_copy.append((t_edge,domain_copy))
+#            elif edge_to_map[1]==t_edge[0]:
+#                domain_copy = []
+#                for p_edge in variable[1]:
+#                    if p_edge[0]!=poss_edge[0] and p_edge[1]!=poss_edge[0] and p_edge[1]!=poss_edge[1]:
+#                        if poss_edge[1]==p_edge[0] or pattern_am[poss_edge[1]][p_edge[0]]==0:
+#                            domain_copy.append(p_edge)
+#                t_edge_domains_copy.append((t_edge,domain_copy))
+#            elif edge_to_map[1]==t_edge[1]:
+#                domain_copy = []
+#                for p_edge in variable[1]:
+#                    if p_edge[1]!=poss_edge[0] and p_edge[0]!=poss_edge[1] and p_edge[0]!=poss_edge[0]:
+#                        if poss_edge[1]==p_edge[1] or pattern_am[poss_edge[1]][p_edge[1]]==0:
+#                            domain_copy.append(p_edge)
+#                t_edge_domains_copy.append((t_edge,domain_copy))
+#    return t_edge_domains_copy
+
 #_______________________________________________________
 # SET UP FUNCTIONS
 
@@ -258,16 +338,16 @@ def create_t_edge_domains(pattern_am,target_am):
 #__________________________________________________________
 # MAIN
 def main():
-#    p = GraphUtil.create_graph("graphEpiEx/P.txt")
-#    t = GraphUtil.create_graph("graphEpiEx/T.txt")
+    p = GraphUtil.create_graph("GraphsToTestEpimorphismOn/P6.txt")
+    t = GraphUtil.create_graph("GraphsToTestEpimorphismOn/T.txt")
         
-#    pattern_am = p[0]
+    pattern_am = p[0]
  #   print pattern_am
-#    target_am = t[0]
-    pattern_am = GraphUtil.create_ErdosRenyi_graph(5,0.6)
-    target_am = GraphUtil.create_ErdosRenyi_graph(3,0.6)
-    print pattern_am
-    print target_am
+    target_am = t[0]
+#    pattern_am = GraphUtil.create_ErdosRenyi_graph(5,0.6)
+#    target_am = GraphUtil.create_ErdosRenyi_graph(3,0.6)
+#    print pattern_am
+#    print target_am
 #    print two_colourable(pattern_am)
 #    print two_colourable(target_am)
 #    p_vertex_domains = create_p_vertexdomains(pattern_am,target_am)

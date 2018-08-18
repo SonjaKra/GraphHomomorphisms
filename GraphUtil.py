@@ -140,8 +140,8 @@ def create_ErdosRenyi_graph(n,d):
     am = [[0 for i in xrange(n)] for j in xrange(n)]
     for i in range(n):
         for j in range(i+1,n):
-            r = random.random()
-            if r<d:
+            r = random.randrange(0,100)
+            if float(r)<d*100:
                 am[i][j]=1
                 am[j][i]=1
     return am

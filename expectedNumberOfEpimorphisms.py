@@ -26,15 +26,15 @@ def expected_number_of_epimorphisms(v_p,v_t,d_p,d_t):
     expectation = Decimal(0)
     while t!=[]:
         # number of ways of assigning v_p distinguishable vertices to v_t indistinguishable vertices according to the partition t
-        poss = multinomial_coefficient(v_p,t)
+        poss = multinomial_coeff(t)
         poss *= prob_of_A_and_B(t,d_p,d_t)
         poss *= prob_no_edge_to_vertex(t,d_t,d_p)
         # count distinct values: t=[3,1,1] results in temp = [2,0,1] (2 times 1, 0 times 2, 1 times 3)
-        temp = [0]*t[0]
+        temp = [0]*(v_p-v_t+1)
         for e in t:
             temp[e-1]+=1
         # multiply by distinct permutations of t
-        poss*=multinomial_coefficient(v_t,temp)
+        poss *= multinomial_coeff(temp)
         expectation += poss
         t = nextPartition(t)
     return expectation
@@ -143,7 +143,7 @@ def main():
 def matrix():
     Vt = 5
     Vp = 10
-    f = "10P5Texpectation1.txt"
+    f = "10P5Texpectation.txt"
     f = open(f,"w")
     dt = 0
     while dt <= 1:
