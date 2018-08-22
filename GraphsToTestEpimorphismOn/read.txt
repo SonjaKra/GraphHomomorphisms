@@ -3,4 +3,9 @@ valid epimorphisms
 P,P2,P6 -> T
 P3,P5,P7 -> T2
 
+p10 -> P4
+
+
 P4 (4-clique) to neither T and T2
+p8 does not map to T3, algorithm is incorrect
+P9 to T4 , general algorithm is incorrect

@@ -6,6 +6,8 @@ import copy
 def graph_epimorphism(pattern_am,target_am):
     # TODO: consider connected components individually
     #pattern_am and target_am assumed to be loopless
+#    print pattern_am
+#    print target_am
     if len(pattern_am) < len(target_am):
         return False
     if edge_number(pattern_am) < edge_number(target_am):
@@ -59,8 +61,8 @@ def graph_epimorphism_exists(p_vertex_domains,t_edge_domains,pattern_am,target_a
 #        print "assigning" + str(edge_to_map) +" to " + str(poss_edge)
         # map edge_to_map -> possedge (in the order vertices are listed)
         # propagation: adapt domains
-#        t_edge_domains_copy=propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,p_dist_matrix,t_dist_matrix)
-        t_edge_domains_copy=propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,pattern_am)
+        t_edge_domains_copy=propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,p_dist_matrix,t_dist_matrix)
+#        t_edge_domains_copy=propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,pattern_am)
         if [] in [variable_value_pair[1] for variable_value_pair in t_edge_domains_copy]:
             continue
         p_vertex_domains_copy = propagate_adjacency_after_edge_assignement(p_vertex_domains,poss_edge,edge_to_map,pattern_am,target_am,p_dist_matrix,t_dist_matrix)
@@ -202,65 +204,66 @@ def propagate_adjacency_after_edge_assignement(p_vertex_domains,p_edge,t_edge,pa
  #   print "done"
     return p_vertex_domains_copy
 
-#def propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,p_dist_matrix,t_dist_matrix):
-#    t_edge_domains_copy = []
- #   for variable in t_edge_domains:
-#        t_edge = variable[0]
-#        if t_edge!=edge_to_map:
-#            domain_copy = []
-#            for p_edge in variable[1]:
-#                if p_dist_matrix[poss_edge[0]][p_edge[0]]>=t_dist_matrix[edge_to_map[0]][t_edge[0]] and not(p_dist_matrix[poss_edge[0]][p_edge[0]]==1 and t_dist_matrix[edge_to_map[0]][t_edge[0]]==0):
-#                    if p_dist_matrix[poss_edge[1]][p_edge[1]]>=t_dist_matrix[edge_to_map[1]][t_edge[1]] and not(p_dist_matrix[poss_edge[1]][p_edge[1]]==1 and t_dist_matrix[edge_to_map[1]][t_edge[1]]==0):
-#                        if p_dist_matrix[poss_edge[0]][p_edge[1]]>=t_dist_matrix[edge_to_map[0]][t_edge[1]] and not(p_dist_matrix[poss_edge[0]][p_edge[1]]==1 and t_dist_matrix[edge_to_map[0]][t_edge[1]]==0):
-#                            if p_dist_matrix[poss_edge[1]][p_edge[0]]>=t_dist_matrix[edge_to_map[1]][t_edge[0]] and not(p_dist_matrix[poss_edge[1]][p_edge[0]]==1 and t_dist_matrix[edge_to_map[1]][t_edge[0]]==0):
-#                                domain_copy.append(p_edge)
-#            t_edge_domains_copy.append((t_edge,domain_copy))
-#    return t_edge_domains_copy
-
-# loops not considered here       
-def propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,pattern_am):
+def propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,p_dist_matrix,t_dist_matrix):
     t_edge_domains_copy = []
     for variable in t_edge_domains:
         t_edge = variable[0]
         if t_edge!=edge_to_map:
-            if len(set(edge_to_map).union(set(t_edge)))==4:
-                domain_copy = []
-                for p_edge in variable[1]:
-                    if len(set(poss_edge).union(set(p_edge)))==4:
-                        domain_copy.append(p_edge)
-                t_edge_domains_copy.append((t_edge,domain_copy))
+            domain_copy = []
+            for p_edge in variable[1]:
+                if p_edge!=poss_edge and not(p_edge[0]==poss_edge[1] and p_edge[1]==poss_edge[0]):
+                    if p_dist_matrix[poss_edge[0]][p_edge[0]]>=t_dist_matrix[edge_to_map[0]][t_edge[0]] and not(p_dist_matrix[poss_edge[0]][p_edge[0]]==1 and t_dist_matrix[edge_to_map[0]][t_edge[0]]==0):
+                        if p_dist_matrix[poss_edge[1]][p_edge[1]]>=t_dist_matrix[edge_to_map[1]][t_edge[1]] and not(p_dist_matrix[poss_edge[1]][p_edge[1]]==1 and t_dist_matrix[edge_to_map[1]][t_edge[1]]==0):
+                            if p_dist_matrix[poss_edge[0]][p_edge[1]]>=t_dist_matrix[edge_to_map[0]][t_edge[1]] and not(p_dist_matrix[poss_edge[0]][p_edge[1]]==1 and t_dist_matrix[edge_to_map[0]][t_edge[1]]==0):
+                                if p_dist_matrix[poss_edge[1]][p_edge[0]]>=t_dist_matrix[edge_to_map[1]][t_edge[0]] and not(p_dist_matrix[poss_edge[1]][p_edge[0]]==1 and t_dist_matrix[edge_to_map[1]][t_edge[0]]==0):
+                                    domain_copy.append(p_edge)
+            t_edge_domains_copy.append((t_edge,domain_copy))
+    return t_edge_domains_copy
+
+# loops not considered here       
+#def propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,pattern_am):
+#    t_edge_domains_copy = []
+#    for variable in t_edge_domains:
+#        t_edge = variable[0]
+#        if t_edge!=edge_to_map:
+#            if len(set(edge_to_map).union(set(t_edge)))==4:
+#                domain_copy = []
+#                for p_edge in variable[1]:
+#                    if len(set(poss_edge).union(set(p_edge)))==4:
+#                        domain_copy.append(p_edge)
+#                t_edge_domains_copy.append((t_edge,domain_copy))
                 # edge_to_map:[u,v], t_edge :[w,z]
                 #case u==w
-            elif edge_to_map[0]==t_edge[0]:
-                domain_copy = []
-                for p_edge in variable[1]:
-                    if p_edge[0]!=poss_edge[1] and p_edge[1]!=poss_edge[0] and p_edge[1]!=poss_edge[1]:
-                        # IMPORTANT: no loops considered currently
-                        if p_edge[0]==poss_edge[0] or pattern_am[p_edge[0]][poss_edge[0]]==0:
-                            domain_copy.append(p_edge)
-                t_edge_domains_copy.append((t_edge,domain_copy))
-            elif edge_to_map[0]==t_edge[1]:
-                domain_copy = []
-                for p_edge in variable[1]:
-                    if p_edge[1]!=poss_edge[1] and p_edge[0]!=poss_edge[1] and p_edge[0]!=poss_edge[0]:
-                        if poss_edge[0]==p_edge[1] or pattern_am[poss_edge[0]][p_edge[1]]==0:
-                            domain_copy.append(p_edge)
-                t_edge_domains_copy.append((t_edge,domain_copy))
-            elif edge_to_map[1]==t_edge[0]:
-                domain_copy = []
-                for p_edge in variable[1]:
-                    if p_edge[0]!=poss_edge[0] and p_edge[1]!=poss_edge[0] and p_edge[1]!=poss_edge[1]:
-                        if poss_edge[1]==p_edge[0] or pattern_am[poss_edge[1]][p_edge[0]]==0:
-                            domain_copy.append(p_edge)
-                t_edge_domains_copy.append((t_edge,domain_copy))
-            elif edge_to_map[1]==t_edge[1]:
-                domain_copy = []
-                for p_edge in variable[1]:
-                    if p_edge[1]!=poss_edge[0] and p_edge[0]!=poss_edge[1] and p_edge[0]!=poss_edge[0]:
-                        if poss_edge[1]==p_edge[1] or pattern_am[poss_edge[1]][p_edge[1]]==0:
-                            domain_copy.append(p_edge)
-                t_edge_domains_copy.append((t_edge,domain_copy))
-    return t_edge_domains_copy
+#            elif edge_to_map[0]==t_edge[0]:
+#                domain_copy = []
+#                for p_edge in variable[1]:
+#                    if p_edge[0]!=poss_edge[1] and p_edge[1]!=poss_edge[0] and p_edge[1]!=poss_edge[1]:
+#                        # IMPORTANT: no loops considered currently
+#                        if p_edge[0]==poss_edge[0] or pattern_am[p_edge[0]][poss_edge[0]]==0:
+#                            domain_copy.append(p_edge)
+#                t_edge_domains_copy.append((t_edge,domain_copy))
+#            elif edge_to_map[0]==t_edge[1]:
+#                domain_copy = []
+#                for p_edge in variable[1]:
+#                    if p_edge[1]!=poss_edge[1] and p_edge[0]!=poss_edge[1] and p_edge[0]!=poss_edge[0]:
+#                        if poss_edge[0]==p_edge[1] or pattern_am[poss_edge[0]][p_edge[1]]==0:
+#                            domain_copy.append(p_edge)
+#                t_edge_domains_copy.append((t_edge,domain_copy))
+#            elif edge_to_map[1]==t_edge[0]:
+#                domain_copy = []
+#                for p_edge in variable[1]:
+#                    if p_edge[0]!=poss_edge[0] and p_edge[1]!=poss_edge[0] and p_edge[1]!=poss_edge[1]:
+#                        if poss_edge[1]==p_edge[0] or pattern_am[poss_edge[1]][p_edge[0]]==0:
+#                            domain_copy.append(p_edge)
+#                t_edge_domains_copy.append((t_edge,domain_copy))
+#            elif edge_to_map[1]==t_edge[1]:
+#                domain_copy = []
+#                for p_edge in variable[1]:
+#                    if p_edge[1]!=poss_edge[0] and p_edge[0]!=poss_edge[1] and p_edge[0]!=poss_edge[0]:
+#                        if poss_edge[1]==p_edge[1] or pattern_am[poss_edge[1]][p_edge[1]]==0:
+#                            domain_copy.append(p_edge)
+#                t_edge_domains_copy.append((t_edge,domain_copy))
+#    return t_edge_domains_copy
 
 # loops not considered here       
 #def propagate_surjectivity_after_edge_assignement(t_edge_domains,edge_to_map,poss_edge,pattern_am):
@@ -338,8 +341,8 @@ def create_t_edge_domains(pattern_am,target_am):
 #__________________________________________________________
 # MAIN
 def main():
-    p = GraphUtil.create_graph("GraphsToTestEpimorphismOn/P6.txt")
-    t = GraphUtil.create_graph("GraphsToTestEpimorphismOn/T.txt")
+    p = GraphUtil.create_graph("GraphsToTestEpimorphismOn/P11.txt")
+    t = GraphUtil.create_graph("GraphsToTestEpimorphismOn/T5.txt")
         
     pattern_am = p[0]
  #   print pattern_am
@@ -355,7 +358,7 @@ def main():
 #    print graph_epimorphism_exists(p_vertex_domains,t_edge_domains,pattern_am,target_am)
     print graph_epimorphism(pattern_am,target_am)
     
-#main()
+main()
 
 #am = [[0,1,0,0,0,0,0],[1,0,1,1,0,0,0],[0,1,0,0,0,0,0],[0,1,0,0,1,1,0],[0,0,0,1,0,0,0],[0,0,0,1,0,0,1],[0,0,0,0,0,1,0]]
 #print am

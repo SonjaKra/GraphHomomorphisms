@@ -2,8 +2,8 @@ import GraphUtil
 import Graphepimorphism
 import GraphEpimorphismWithDistanceFiltering
 
-V_t = 5
-V_p = 10
+V_t = 8
+V_p = 12
 dt = 0
 times = 1
 #f = "10P5TsatisfiableEpiproportion.txt"
@@ -18,10 +18,10 @@ while dt<=1:
             print pattern_am
             print
             print target_am
-            if Graphepimorphism.graph_epimorphism(pattern_am,target_am):
-                print "true"
-            else:
-                print "false"
+ #           if Graphepimorphism.graph_epimorphism(pattern_am,target_am):
+#                print "true"
+#            else:
+#                print "false"
             if GraphEpimorphismWithDistanceFiltering.graph_epimorphism(pattern_am,target_am):
                 print "true"
             else:
